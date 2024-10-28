@@ -3,24 +3,28 @@ import requests
 import psycopg2
 from twilio.rest import Client
 from flask import Flask, request
+from dotenv import load_dotenv
+import os
 
 # Initialize Flask app
 app = Flask(__name__)
 
+load_dotenv()
+
 # Twilio configuration
-TWILIO_ACCOUNT_SID = 'ACef3766228abac34c523e5dcdddb7c838'
-TWILIO_AUTH_TOKEN = '5495b2358216f3b0528330748adf5671'
-TWILIO_PHONE_NUMBER = 'whatsapp:+14155238886'
-AUTHORIZED_NUMBER = 'whatsapp:+27605467755'  # Authorized number to send updates
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
+TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
+AUTHORIZED_NUMBER = os.getenv("AUTHORIZED_NUMBER")
 
 client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 
 # Database configuration
-DB_NAME = "postgres"
-DB_USER = "postgres.qdpzxholuqupwgcwulog"
-DB_PASSWORD = "HomelessPeople6969420"
-DB_HOST = "aws-0-eu-west-2.pooler.supabase.com"
-DB_PORT = "5432"
+DB_NAME = os.getenv("DB_NAME")
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
 
 # Function to connect and insert into the database
 def insert_people_fed(people_fed):
