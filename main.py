@@ -1,30 +1,32 @@
 from datetime import datetime
 import requests
 import psycopg2
-from twilio.rest import Client
 from flask import Flask, request
+import vonage
 from dotenv import load_dotenv
 import os
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Initialize Flask app
 app = Flask(__name__)
 
-load_dotenv()
+# Vonage configuration
+VONAGE_API_KEY = os.getenv('VONAGE_API_KEY')
+VONAGE_API_SECRET = os.getenv('VONAGE_API_SECRET')
+AUTHORIZED_NUMBER = os.getenv('AUTHORIZED_NUMBER')  # Authorized number to send updates
+VONAGE_FROM_NUMBER = os.getenv('VONAGE_FROM_NUMBER')
 
-# Twilio configuration
-TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
-TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
-TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
-AUTHORIZED_NUMBER = os.getenv("AUTHORIZED_NUMBER")
-
-client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+client = vonage.Client(key=VONAGE_API_KEY, secret=VONAGE_API_SECRET)
+sms = vonage.Sms(client)
 
 # Database configuration
-DB_NAME = os.getenv("DB_NAME")
-DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_HOST = os.getenv("DB_HOST")
-DB_PORT = os.getenv("DB_PORT")
+DB_NAME = os.getenv('DB_NAME')
+DB_USER = os.getenv('DB_USER')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
+DB_HOST = os.getenv('DB_HOST')
+DB_PORT = os.getenv('DB_PORT')
 
 # Function to connect and insert into the database
 def insert_people_fed(people_fed):
@@ -35,7 +37,8 @@ def insert_people_fed(people_fed):
         )
         print("Database connected.")
         cur = conn.cursor()
-
+        
+        # Fetch table structure to verify column names
         cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name='HomelessStats'")
         columns = cur.fetchall()
         print("Columns in HomelessStats table:", columns)
@@ -55,11 +58,11 @@ def insert_people_fed(people_fed):
     except Exception as e:
         print("Error inserting into database:", e)
 
-# Flask route for handling incoming WhatsApp messages
+# Flask route for handling incoming SMS messages
 @app.route("/sms", methods=["POST"])
 def sms_reply():
-    from_number = request.form.get("From")
-    body = request.form.get("Body")
+    from_number = request.form.get("msisdn")
+    body = request.form.get("text")
 
     print(f"Received message from: {from_number} with body: {body}")
 
@@ -74,15 +77,3 @@ def sms_reply():
             print("ValueError: Invalid number received.")
     else:
         response_message = "You are not authorized to send this information."
-        print("Unauthorized number.")
-
-    client.messages.create(
-        body=response_message,
-        from_=TWILIO_PHONE_NUMBER,
-        to=from_number
-    )
-
-    return "", 200
-
-if __name__ == "__main__":
-    app.run(debug=True, port=5000)
